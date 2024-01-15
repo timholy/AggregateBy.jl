@@ -2,6 +2,8 @@ module ByOperations
 
 export By
 
+using Base: IteratorEltype, EltypeUnknown, HasEltype
+
 struct UNKNOWN end
 
 struct By{K,V,F}
@@ -10,45 +12,93 @@ end
 By{K,V}(f::F) where {K,V,F} = By{K,V,F}(f)
 By{K,V}() where {K,V} = By{K,V}(identity)
 @inline By{K}(args...) where K = By{K,UNKNOWN}(args...)
+
+"""
+    By(f=identity)
+    By{K,V}(f=identity)
+
+`By` creates an object that triggers "key-selective" operations on a collection. `f` is the function that generates
+the key, and the operation determines the resulting value. The return value is typically a `Dict`.
+Optionally, you can specify the key `K` and value `V` types of that `Dict`, which can help performance in certain cases
+(see the documentation for details).
+
+# Examples
+
+```jldoctest; setup=:(using ByOperations)
+julia> count(By(lowercase), "Hello")
+Dict{Char, Int64} with 4 entries:
+  'h' => 1
+  'l' => 2
+  'e' => 1
+  'o' => 1
+
+julia> push!(By(isodd), 1:11)
+Dict{Bool, Vector{Int64}} with 2 entries:
+  0 => [2, 4, 6, 8, 10]
+  1 => [1, 3, 5, 7, 9, 11]
+```
+"""
 @inline By(args...) = By{UNKNOWN}(args...)
 
 (by::By)(x) = by.f(x)
 
-# count
+Base.keytype(::By{K,V}) where {K,V} = K
+Base.valtype(::By{K,V}) where {K,V} = V
 
-Base.count(by::By{UNKNOWN,UNKNOWN}, itr) = count(By{UNKNOWN,Int}(by.f), itr)   # count defaults to Int
-Base.count(by::By{K,UNKNOWN}, itr) where K = count(By{K,Int}(by.f), itr)
-Base.count(by::By{UNKNOWN,V}, itr) where V = tighten(count(By{Any,V}(by.f), itr), UNKNOWN, V)
-Base.count(by::By{K,V}, itr) where {K,V} = operate!(by, (d, k, v) -> d[k] = get(d, k, zero(V)) + oneunit(V), Dict{K, V}(), itr)
+## count
+
+Base.count(by::By, itr) = _count(by, itr, IteratorEltype(typeof(itr)))
 # Ambiguities
-Base.count(by::By{UNKNOWN,UNKNOWN}, A::Union{AbstractArray, Base.AbstractBroadcasted}) = invoke(count, Tuple{By{UNKNOWN,UNKNOWN}, Any}, by, A)
-Base.count(by::By{K,UNKNOWN}, A::Union{AbstractArray, Base.AbstractBroadcasted}) where K = invoke(count, Tuple{By{K,UNKNOWN}, Any}, by, A)
-Base.count(by::By{UNKNOWN,V}, A::Union{AbstractArray, Base.AbstractBroadcasted}) where V = invoke(count, Tuple{By{UNKNOWN,V}, Any}, by, A)
-Base.count(by::By{K,V}, A::Union{AbstractArray, Base.AbstractBroadcasted}) where {K,V} = invoke(count, Tuple{By{K,V}, Any}, by, A)
+Base.count(by::By, A::Union{AbstractArray, Base.AbstractBroadcasted}) = invoke(count, Tuple{By, Any}, by, A)
 
-# sum
+# count defaults to Int
+_count(by::By{UNKNOWN,V}, itr, ::HasEltype) where V = __count(By{keyjoin(by, eltype(itr)),V===UNKNOWN ? Int : V}(by.f), itr)
+_count(by::By{UNKNOWN,V}, itr, ::EltypeUnknown) where V = tighten(__count(By{Any,V===UNKNOWN ? Int : V}(by.f), itr), UNKNOWN, V===UNKNOWN ? Int : V)
+_count(by::By{K,V}, itr, ::Any) where {K,V} = __count(By{K,V===UNKNOWN ? Int : V}(by.f), itr)
 
-Base.sum(by::By{UNKNOWN,UNKNOWN}, itr) = tighten(sum(By{Any,Any}(by.f), itr), UNKNOWN, UNKNOWN)
-Base.sum(by::By{K,UNKNOWN}, itr) where K = tighten(sum(By{K,Any}(by.f), itr), K, UNKNOWN)
-Base.sum(by::By{UNKNOWN,V}, itr) where V = tighten(sum(By{Any,V}(by.f), itr), UNKNOWN, V)
-Base.sum(by::By{K,V}, itr) where {K,V} = operate!(by, (d, k, v) -> d[k] = get(d, k, V === Any ? false : zero(V)) + v, Dict{K, V}(), itr)
+__count(by::By{K,V}, itr) where {K,V} = operate!(by, (d, k, v) -> d[k] = get(d, k, zero(V)) + oneunit(V), Dict{K, V}(), itr)
+
+
+## sum
+
+Base.sum(by::By, itr) = _sum(by, itr, IteratorEltype(itr))
 # Ambiguities
-Base.sum(by::By{UNKNOWN,UNKNOWN}, A::AbstractArray) = invoke(sum, Tuple{By{UNKNOWN,UNKNOWN}, Any}, by, A)
-Base.sum(by::By{K,UNKNOWN}, A::AbstractArray) where K = invoke(sum, Tuple{By{K,UNKNOWN}, Any}, by, A)
-Base.sum(by::By{UNKNOWN,V}, A::AbstractArray) where V = invoke(sum, Tuple{By{UNKNOWN,V}, Any}, by, A)
-Base.sum(by::By{K,V}, A::AbstractArray) where {K,V} = invoke(sum, Tuple{By{K,V}, Any}, by, A)
+Base.sum(by::By, A::AbstractArray) = invoke(sum, Tuple{By, Any}, by, A)
 # TODO? `dims` version for AbstractArray?
+
+_sum(by::By{UNKNOWN,UNKNOWN}, itr, ::HasEltype) = __sum(By{keyjoin(by,eltype(itr)),sumjoin(eltype(itr))}(by.f), itr)
+_sum(by::By{K,UNKNOWN}, itr, ::HasEltype) where K = __sum(By{K,sumjoin(eltype(itr))}(by.f), itr)
+_sum(by::By{UNKNOWN,V}, itr, ::HasEltype) where V = __sum(By{keyjoin(by,eltype(itr)),V}(by.f), itr)
+_sum(by::By{K,V}, itr, ::HasEltype) where {K,V} = __sum(By{K,V}(by.f), itr)
+
+_sum(by::By{K,V}, itr, ::EltypeUnknown) where {K,V} = tighten(__sum(By{K===UNKNOWN ? Any : K,V===UNKNOWN ? Any : V}(by.f), itr), K, V)
+
+__sum(by::By{K,V}, itr) where {K,V} = operate!(by, (d, k, v) -> d[k] = get(d, k, V === Any ? false : zero(V)) + v, Dict{K, V}(), itr)
+
+sumjoin(::Type{T}) where T = Core.Compiler.return_type(Tuple{typeof(+),T,T})
 
 # push!
 
-Base.push!(by::By{UNKNOWN,UNKNOWN}, itr) = tighten(push!(By{Any,Any}(by.f), itr), UNKNOWN, UNKNOWN; Vdeep=eltypebottom)
-Base.push!(by::By{K,UNKNOWN}, itr) where K = tighten(push!(By{K,Any}(by.f), itr), K, UNKNOWN; Vdeep=eltypebottom)
-Base.push!(by::By{UNKNOWN,V}, itr) where V = tighten(push!(By{Any,V}(by.f), itr), UNKNOWN, V)
-Base.push!(by::By{K,V}, itr) where {K,V} = operate!(by, (d, k, v) -> push!(get!(Vector{V}, d, k), v), Dict{K,V}(), itr)
+Base.push!(by::By, itr) = _push!(by, itr, IteratorEltype(itr))
+
+_push!(by::By{UNKNOWN,UNKNOWN}, itr, ::HasEltype) = __push!(By{keyjoin(by,eltype(itr)),Vector{eltype(itr)}}(by.f), itr)
+_push!(by::By{K,UNKNOWN}, itr, ::HasEltype) where K = __push!(By{K,Vector{eltype(itr)}}(by.f), itr)
+_push!(by::By{UNKNOWN,V}, itr, ::HasEltype) where V = __push!(By{keyjoin(by,eltype(itr)),V}(by.f), itr)
+_push!(by::By{K,V}, itr, ::HasEltype) where {K,V} = __push!(By{K,V}(by.f), itr)
+
+_push!(by::By{UNKNOWN,UNKNOWN}, itr, ::EltypeUnknown) = tighten(__push!(By{Any,Any}(by.f), itr), UNKNOWN, UNKNOWN; Vdeep=eltypebottom)
+_push!(by::By{K,UNKNOWN}, itr, ::EltypeUnknown) where K = tighten(__push!(By{K,Any}(by.f), itr), K, UNKNOWN; Vdeep=eltypebottom)
+_push!(by::By{UNKNOWN,V}, itr, ::EltypeUnknown) where V = tighten(__push!(By{Any,V}(by.f), itr), UNKNOWN, V)
+_push!(by::By{K,V}, itr, ::EltypeUnknown) where {K,V} = __push!(By{K,V}(by.f), itr)
+
+
+__push!(by::By{K,V}, itr) where {K,V} = operate!(by, (d, k, v) -> push!(get!(Vector{V}, d, k), v), Dict{K,V}(), itr)
 
 
 
 ## Generic operations
+
+keyjoin(::By{K,V,F}, ::Type{T}) where {K,V,F,T} = Core.Compiler.return_type(Tuple{F,T})
 
 function operate!(by::By{K}, op, dest, itr) where K
     for item in itr
@@ -83,6 +133,8 @@ function tighten(dest::Dict, ::Type{UNKNOWN}, ::Type{V}; Kdeep=nothing, Vdeep=no
     return merge!(Dict{K,V}(), dest)
 end
 
+tighten(dest::Dict, ::Type{K}, ::Type{V}; Kdeep=nothing, Vdeep=nothing) where {K,V} = dest   # don't tighten
+
 Base.@nospecializeinfer deeptypejoin(@nospecialize(T::Type), itr::Array{<:Any,N}) where N = Array{deepeltypejoin(T, itr), N}
 Base.@nospecializeinfer function deeptypejoin(@nospecialize(T::Type), itr::Dict)
     P = deepeltypejoin(T, itr)   # Pair{K,V}
@@ -98,32 +150,5 @@ end
 
 eltypebottom(::Type{Union{}}) = Union{}
 eltypebottom(::Type{T}) where T = eltype(T)
-
-# function operate(by::By{UNKNOWN}, op, fits, widen, dest, itr)
-#     ret = iterate(itr)
-#     ret === nothing && return nothing
-#     item, _ = ret
-#     while ret !== nothing
-#         item, state = ret
-#         byitem = by(item)
-#         if !fits(dest, byitem, item)
-#             dest = widen(dest, byitem, item)
-#         end
-#         op(dest, byitem, item)
-#         ret = iterate(itr, state)
-#     end
-#     return dest
-# end
-
-
-# Base.@nospecializeinfer function dictwiden(d::Dict{K1,V1}, @nospecialize(K2::Type), @nospecialize(V2::Type)) where {K1,V1}
-#     K12 = typejoin(K1, K2)
-#     V12 = typejoin(V1, V2)
-#     d12 = Dict{K12,V12}()
-#     for (k, v) in d
-#         d12[k] = v
-#     end
-#     return d12
-# end
 
 end   # module ByOperations
