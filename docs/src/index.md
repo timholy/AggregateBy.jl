@@ -1,7 +1,7 @@
 ```@meta
-CurrentModule = ByOperations
+CurrentModule = AggregateBy
 DocTestSetup = quote
-    using ByOperations
+    using AggregateBy
 end
 ```
 
@@ -10,12 +10,12 @@ end
 This package is not yet registered, so you'll have to enter package mode with `]` and then:
 
 ```julia
-(@v1.10) pkg> dev https://github.com/timholy/ByOperations.jl
+(@v1.10) pkg> dev https://github.com/timholy/AggregateBy.jl
 ```
 
 # Tutorial
 
-All examples assume that you've executed `using ByOperations` in the current session.
+All examples assume that you've executed `using AggregateBy` in the current session.
 
 To count all the letters in a string:
 

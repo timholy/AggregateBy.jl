@@ -1,14 +1,14 @@
-using ByOperations
+using AggregateBy
 using Documenter
 
-DocMeta.setdocmeta!(ByOperations, :DocTestSetup, :(using ByOperations); recursive=true)
+DocMeta.setdocmeta!(AggregateBy, :DocTestSetup, :(using AggregateBy); recursive=true)
 
 makedocs(;
-    modules=[ByOperations],
+    modules=[AggregateBy],
     authors="Tim Holy <tim.holy@gmail.com> and contributors",
-    sitename="ByOperations.jl",
+    sitename="AggregateBy.jl",
     format=Documenter.HTML(;
-        canonical="https://timholy.github.io/ByOperations.jl",
+        canonical="https://timholy.github.io/AggregateBy.jl",
         edit_link="main",
         assets=String[],
     ),
@@ -20,6 +20,6 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/timholy/ByOperations.jl",
+    repo="github.com/timholy/AggregateBy.jl",
     devbranch="main",
 )

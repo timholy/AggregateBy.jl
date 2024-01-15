@@ -1,4 +1,4 @@
-module ByOperations
+module AggregateBy
 
 export By
 
@@ -24,7 +24,7 @@ Optionally, you can specify the key `K` and value `V` types of that `Dict`, whic
 
 # Examples
 
-```jldoctest; setup=:(using ByOperations)
+```jldoctest; setup=:(using AggregateBy)
 julia> count(By(lowercase), "Hello")
 Dict{Char, Int64} with 4 entries:
   'h' => 1
@@ -156,4 +156,4 @@ end
 eltypebottom(::Type{Union{}}) = Union{}
 eltypebottom(::Type{T}) where T = eltype(T)
 
-end   # module ByOperations
+end   # module AggregateBy
