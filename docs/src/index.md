@@ -15,20 +15,9 @@ This package is not yet registered, so you'll have to enter package mode with `]
 
 # Tutorial
 
-All examples assume that you've executed `using AggregateBy` in the current session.
+These examples assume that you've executed `using AggregateBy` in the current session.
 
-To count all the letters in a string:
-
-```jldoctest
-julia> count(By(), "Hello")
-Dict{Char, Int64} with 4 entries:
-  'H' => 1
-  'l' => 2
-  'e' => 1
-  'o' => 1
-```
-
-If you also want to ignore case, then use
+To count all the letters in a string, ignoring case, use
 
 ```jldoctest
 julia> count(By(lowercase), "HelLo")
@@ -39,18 +28,7 @@ Dict{Char, Int64} with 4 entries:
   'o' => 1
 ```
 
-and all characters will be converted to lowercase before counting them.
-
-Or, combine multiple `sum(f, itr)` statements into a single command:
-
-```jldoctest
-julia> sum(By(isodd), 1:11)
-Dict{Bool, Int64} with 2 entries:
-  0 => 30
-  1 => 36
-```
-
-or collect such items for further analysis:
+To collect similar items, use `push!`:
 
 ```jldoctest
 julia> push!(By(isodd), 1:11)

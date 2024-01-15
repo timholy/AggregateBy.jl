@@ -1,6 +1,6 @@
 # Internals and advanced usage
 
-The main design goal is to make `By` robust and easy to use. However, this package also tries to achieve good performance,
+The main design goal is to make `By` robust and easy to use. However, this package also tries to achieve reasonable performance,
 and that often means inferring the key- and value-types of the returned `Dict`. In detail, here is what actually happens for a ficticious operation `aggregator` (e.g., like `count`, `sum`, or `push!`) and "by" function `f`:
 
 - If you call `aggregator(By{K,V}(f), itr)`, it should return a `Dict{K,V}`. It does not rely on inference.
@@ -61,7 +61,7 @@ yields the following results:
 | `vabstract` | 343.598 ns (4 allocations: 432 bytes) | 906.775 ns (4 allocations: 512 bytes) |
 | `vunknown`  | 861.281 ns (26 allocations: 960 bytes) | 1.327 μs (30 allocations: 1.44 KiB) |
 
-In the `vunknown` row, much of the cost in the `By{K,V}(f)` case is the unknown type of `vunknown.container`;
+In the `vunknown` row, much of the cost in the `By{K,V}(f)` case is due to the unknown type of `vunknown.container`;
 the alternative definition
 
 ```julia
