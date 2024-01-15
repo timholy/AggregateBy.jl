@@ -8,7 +8,7 @@ and that often means inferring the key- and value-types of the returned `Dict`. 
   + if the eltype `T` is known, it infers `K` from `f(::T)` and `V` from `aggregator` and `T`
   + if the eltype is unknown, it will aggregate to `Dict{Any,Any}` internally, and then try to "tighten" the eltype upon return.
 
-You can use `ByOperations.UNKNOWN` if you want to tighten selectively, e.g., `By{UNKNOWN,Any}` will tighten the keytype but not the valtype, and so on.
+You can use `AggregateBy.UNKNOWN` if you want to tighten selectively, e.g., `By{UNKNOWN,Any}` will tighten the keytype but not the valtype, and so on.
 
 To illustrate these considerations, let's experiment with both `By(f)` and `By{K,V}(f)` in three different cases:
 
@@ -36,7 +36,7 @@ julia> by1 = By{Bool,Int}(isodd)
 By{Bool, Int64, typeof(isodd)}(isodd)
 
 julia> by2 = By(isodd)
-By{ByOperations.UNKNOWN, ByOperations.UNKNOWN, typeof(isodd)}(isodd)
+By{AggregateBy.UNKNOWN, AggregateBy.UNKNOWN, typeof(isodd)}(isodd)
 
 julia> vconcrete = collect(1:11);    # Vector{Int}
 

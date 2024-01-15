@@ -1,10 +1,10 @@
-# ByOperations
+# AggregateBy
 
-Documentation for [ByOperations](https://github.com/timholy/ByOperations.jl).
+Documentation for [AggregateBy](https://github.com/timholy/AggregateBy.jl).
 
 ```@index
 ```
 
 ```@autodocs
-Modules = [ByOperations]
+Modules = [AggregateBy]
 ```

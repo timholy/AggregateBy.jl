@@ -1,14 +1,14 @@
-# ByOperations
+# AggregateBy
 
-[![Build Status](https://github.com/timholy/ByOperations.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/timholy/ByOperations.jl/actions/workflows/CI.yml?query=branch%3Amain)
-[![Coverage](https://codecov.io/gh/timholy/ByOperations.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/timholy/ByOperations.jl)
-[![Documentation](https://img.shields.io/badge/docs-dev-blue.svg)](https://timholy.github.io/ByOperations.jl/dev)
+[![Build Status](https://github.com/timholy/AggregateBy.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/timholy/AggregateBy.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![Coverage](https://codecov.io/gh/timholy/AggregateBy.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/timholy/AggregateBy.jl)
+[![Documentation](https://img.shields.io/badge/docs-dev-blue.svg)](https://timholy.github.io/AggregateBy.jl/dev)
 
-ByOperations supports simple aggregation operations on iterable containers. Functions that might be called `countby` and `groupby` are instead composed of an aggregation and `By(f)` selector.
+AggregateBy supports simple aggregation operations on iterable containers. Functions that might be called `countby` and `groupby` are instead composed of an aggregation and `By(f)` selector.
 
 ## Examples
 
-All examples assume that you've executed `using ByOperations` in the current session.
+All examples assume that you've executed `using AggregateBy` in the current session.
 
 To count all the letters in a string:
 
@@ -53,4 +53,4 @@ Dict{Bool, Vector{Int64}} with 2 entries:
 ```
 
 If desired, you can control the key- and value-type of the returned `Dict` with `By{K,V}(f)`.
-See the [documentation](https://timholy.github.io/ByOperations.jl/dev) for further details.
+See the [documentation](https://timholy.github.io/AggregateBy.jl/dev) for further details.

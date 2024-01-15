@@ -1,8 +1,8 @@
-using ByOperations
+using AggregateBy
 using Aqua
 using Test
 
-using ByOperations: UNKNOWN
+using AggregateBy: UNKNOWN
 
 # Container type with unknown eltype
 struct UnknownEltype
@@ -15,9 +15,9 @@ Base.iterate(u::UnknownEltype) = iterate(u.container)
 Base.iterate(u::UnknownEltype, s) = iterate(u.container, s)
 
 
-@testset "ByOperations.jl" begin
+@testset "AggregateBy.jl" begin
     @testset "Aqua" begin
-        Aqua.test_all(ByOperations)
+        Aqua.test_all(AggregateBy)
     end
 
     @testset "Fundamentals" begin

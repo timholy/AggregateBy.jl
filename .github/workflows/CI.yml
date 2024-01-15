@@ -69,6 +69,6 @@ jobs:
         shell: julia --project=docs --color=yes {0}
         run: |
           using Documenter: DocMeta, doctest
-          using ByOperations
-          DocMeta.setdocmeta!(ByOperations, :DocTestSetup, :(using ByOperations); recursive=true)
-          doctest(ByOperations)
+          using AggregateBy
+          DocMeta.setdocmeta!(AggregateBy, :DocTestSetup, :(using AggregateBy); recursive=true)
+          doctest(AggregateBy)
