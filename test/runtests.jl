@@ -2,6 +2,8 @@ using ByOperations
 using Aqua
 using Test
 
+using ByOperations: UNKNOWN
+
 # Container type with unknown eltype
 struct UnknownEltype
     container
@@ -16,6 +18,14 @@ Base.iterate(u::UnknownEltype, s) = iterate(u.container, s)
 @testset "ByOperations.jl" begin
     @testset "Aqua" begin
         Aqua.test_all(ByOperations)
+    end
+
+    @testset "Fundamentals" begin
+        @test keytype(By{Bool,Int}) === Bool
+        @test keytype(By{Bool}) === Bool
+        @test valtype(By{Bool,Int}) === Int
+        @test keytype(By{Bool,Int}()) === Bool
+        @test valtype(By{Bool,Int}()) === Int
     end
 
     @testset "count" begin
@@ -45,6 +55,10 @@ Base.iterate(u::UnknownEltype, s) = iterate(u.container, s)
     @testset "sum" begin
         s = @inferred sum(By{Int8, Int}(isodd), 1:11)
         @test isa(s, Dict{Int8, Int}) && s == Dict(0 => 30, 1 => 36)
+        s = @inferred sum(By{Int8}(isodd), 1:11)
+        @test isa(s, Dict{Int8, Int}) && s == Dict(0 => 30, 1 => 36)
+        s = @inferred sum(By{UNKNOWN,Int16}(isodd), 1:11)
+        @test isa(s, Dict{Bool, Int16}) && s == Dict(0 => 30, 1 => 36)
         s = @inferred sum(By(isodd), 1:11)
         @test isa(s, Dict{Bool, Int}) && s == Dict(0 => 30, 1 => 36)
 
@@ -53,12 +67,21 @@ Base.iterate(u::UnknownEltype, s) = iterate(u.container, s)
     end
 
     @testset "push!" begin
-        l = @inferred push!(By{Int8, Vector{Int}}(isodd), 1:11)
+        l = @inferred push!(By{Int8, Vector{Int16}}(isodd), 1:11)
+        @test isa(l, Dict{Int8, Vector{Int16}}) && l == Dict(0 => [2, 4, 6, 8, 10], 1 => [1, 3, 5, 7, 9, 11])
+        l = @inferred push!(By{Int8}(isodd), 1:11)
         @test isa(l, Dict{Int8, Vector{Int}}) && l == Dict(0 => [2, 4, 6, 8, 10], 1 => [1, 3, 5, 7, 9, 11])
-
+        l = @inferred push!(By{UNKNOWN, Vector{Int16}}(isodd), 1:11)
+        @test isa(l, Dict{Bool, Vector{Int16}}) && l == Dict(0 => [2, 4, 6, 8, 10], 1 => [1, 3, 5, 7, 9, 11])
         l = @inferred push!(By(isodd), 1:11)
         @test isa(l, Dict{Bool, Vector{Int}}) && l == Dict(false => [2, 4, 6, 8, 10], true => [1, 3, 5, 7, 9, 11])
 
+        l = @inferred push!(By{Int8, Vector{Int16}}(isodd), UnknownEltype(1:11))
+        @test isa(l, Dict{Int8, Vector{Int16}}) && l == Dict(0 => [2, 4, 6, 8, 10], 1 => [1, 3, 5, 7, 9, 11])
+        l = push!(By{Int8}(isodd), UnknownEltype(1:11))
+        @test isa(l, Dict{Int8, Vector{Int}}) && l == Dict(0 => [2, 4, 6, 8, 10], 1 => [1, 3, 5, 7, 9, 11])
+        l = push!(By{UNKNOWN, Vector{Int16}}(isodd), UnknownEltype(1:11))
+        @test isa(l, Dict{Bool, Vector{Int16}}) && l == Dict(0 => [2, 4, 6, 8, 10], 1 => [1, 3, 5, 7, 9, 11])
         l = push!(By(isodd), UnknownEltype(1:11))
         @test isa(l, Dict{Bool, Vector{Int}}) && l == Dict(false => [2, 4, 6, 8, 10], true => [1, 3, 5, 7, 9, 11])
     end
