@@ -42,8 +42,13 @@ Dict{Bool, Vector{Int64}} with 2 entries:
 
 (by::By)(x) = by.f(x)
 
-Base.keytype(::By{K,V}) where {K,V} = K
-Base.valtype(::By{K,V}) where {K,V} = V
+Base.keytype(::Type{By{K,V,F}}) where {K,V,F} = K
+Base.keytype(::Type{By{K,V}}) where {K,V} = K
+Base.keytype(::Type{By{K}}) where {K} = K
+Base.valtype(::Type{By{K,V,F}}) where {K,V,F} = V
+Base.valtype(::Type{By{K,V}}) where {K,V} = V
+Base.keytype(by::By) = keytype(typeof(by))
+Base.valtype(by::By) = valtype(typeof(by))
 
 ## count
 
