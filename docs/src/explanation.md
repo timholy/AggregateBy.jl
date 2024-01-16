@@ -7,13 +7,13 @@ end
 
 # How it works
 
-If `aggregate` is some aggregation operation, then
+If `aggregate` is some aggregation command, then
 
 ```julia
-julia> aggregate(By(fkey), itr)    # itr is an iterable container
+julia> aggregate(By(fkey, fval), itr)    # itr is an iterable container
 ```
 
-performs aggregations of the form `operation(dict[fkey(x)], x)` where `operation` is associated with `aggregate`. Let's see a few more examples, this time explaining how they work.
+performs aggregations using `operator(dict[fkey(x)], fval(x))` where `operator(a, b)` is associated with `aggregate`. First, let's see a few more examples, this time explaining how they work.
 
 ## Examples and their explanation
 
@@ -43,16 +43,30 @@ Dict{Bool, Int64} with 2 entries:
 `abs2(x::Real)` just squares `x`, and we note that 2² + 4² == 20 (the even numbers in `1:5`) and 1² + 3² + 5² == 35 (the odd numbers in `1:5`).
 This example illustrates an important point: `fkey` is applied to each item to generate the key, and `fval` is applied to each item before excuting the aggregation operation. `sum` aggregates `dict[fkey(x)] + fval(x)`.
 
-A third supported aggregation is `push!`:
+A third supported aggregation is `collect`:
 
 ```jldoctest
-julia> push!(By(isodd), 1:11)
+julia> collect(By(isodd), 1:11)
 Dict{Bool, Vector{Int64}} with 2 entries:
   0 => [2, 4, 6, 8, 10]
   1 => [1, 3, 5, 7, 9, 11]
 ```
 
 In other words, this aggregates via `push!(dict[fkey(x)], fval(x))`: `dict[fkey(x)]` returns the aggregated-list for key `fkey(x)`, and then `fval(x)` is `push!`ed onto the list.
+
+## Supported aggregations
+
+This table summaries the supported aggregations and their associated operators (`operator(a, b)`, where `a = dict[fkey(x)]` is the current state of the aggregator for the given key and `b = fval(x))` is the new value):
+
+| Aggregator | Operator |
+|:---------- |:-------- |
+| `count(by, itr)` | `(a, b) -> a + 1` |
+| `sum(by, itr)` | `(a, b) -> a + b` |
+| `collect(by, itr)` | `(a, b) -> push!(a, b)` |
+| `minimum(by, itr)` | `(a, b) -> min(a, b)` |
+| `maximum(by, itr)` | `(a, b) -> max(a, b)` |
+
+## Controlling the output type
 
 If desired, you can control the key- and value-type of the returned `Dict` with `By{K,V}(fkey, fval)`.
 This can be useful if you want to add items of a different type later, or to help performance in cases where Julia's type-inference fails (see [Internals and advanced usage](@ref)).

@@ -21,10 +21,10 @@ Dict{Char, Int64} with 4 entries:
   'o' => 1
 ```
 
-To collect similar items, use `push!`:
+To collect similar items, use `collect`:
 
 ```julia
-julia> push!(By(isodd), 1:11)
+julia> collect(By(isodd), 1:11)
 Dict{Bool, Vector{Int64}} with 2 entries:
   0 => [2, 4, 6, 8, 10]
   1 => [1, 3, 5, 7, 9, 11]

@@ -70,27 +70,27 @@ Base.iterate(u::UnknownEltype, s) = iterate(u.container, s)
         @test isa(s, Dict{Bool, Int}) && s == result
     end
 
-    @testset "push!" begin
+    @testset "collect" begin
         result = Dict(false => [2, 4, 6, 8, 10], true => [1, 3, 5, 7, 9, 11])
         sresult = Dict(false => [2, 4, 6, 8, 10].^2, true => [1, 3, 5, 7, 9, 11].^2)
-        l = @inferred push!(By{Int8, Vector{Int16}}(isodd), 1:11)
+        l = @inferred collect(By{Int8, Vector{Int16}}(isodd), 1:11)
         @test isa(l, Dict{Int8, Vector{Int16}}) && l == result
-        l = @inferred push!(By{Int8}(isodd), 1:11)
+        l = @inferred collect(By{Int8}(isodd), 1:11)
         @test isa(l, Dict{Int8, Vector{Int}}) && l == result
-        l = @inferred push!(By{UNKNOWN, Vector{Int16}}(isodd), 1:11)
+        l = @inferred collect(By{UNKNOWN, Vector{Int16}}(isodd), 1:11)
         @test isa(l, Dict{Bool, Vector{Int16}}) && l == result
-        l = @inferred push!(By(isodd), 1:11)
+        l = @inferred collect(By(isodd), 1:11)
         @test isa(l, Dict{Bool, Vector{Int}}) && l == result
-        l = @inferred push!(By(isodd, abs2), 1:11)
+        l = @inferred collect(By(isodd, abs2), 1:11)
         @test isa(l, Dict{Bool, Vector{Int}}) && l == sresult
 
-        l = @inferred push!(By{Int8, Vector{Int16}}(isodd), UnknownEltype(1:11))
+        l = @inferred collect(By{Int8, Vector{Int16}}(isodd), UnknownEltype(1:11))
         @test isa(l, Dict{Int8, Vector{Int16}}) && l == result
-        l = push!(By{Int8}(isodd), UnknownEltype(1:11))
+        l = collect(By{Int8}(isodd), UnknownEltype(1:11))
         @test isa(l, Dict{Int8, Vector{Int}}) && l == result
-        l = push!(By{UNKNOWN, Vector{Int16}}(isodd), UnknownEltype(1:11))
+        l = collect(By{UNKNOWN, Vector{Int16}}(isodd), UnknownEltype(1:11))
         @test isa(l, Dict{Bool, Vector{Int16}}) && l == result
-        l = push!(By(isodd), UnknownEltype(1:11))
+        l = collect(By(isodd), UnknownEltype(1:11))
         @test isa(l, Dict{Bool, Vector{Int}}) && l == result
     end
 
