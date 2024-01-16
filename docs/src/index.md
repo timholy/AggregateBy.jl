@@ -36,3 +36,5 @@ Dict{Bool, Vector{Int64}} with 2 entries:
   0 => [-2, -4, -6, -8, -10]
   1 => [-1, -3, -5, -7, -9, -11]
 ```
+
+The next page explains how these examples work.
