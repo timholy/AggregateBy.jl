@@ -96,12 +96,28 @@ Base.iterate(u::UnknownEltype, s) = iterate(u.container, s)
 
     @testset "minimum/maximum" begin
         temps = readdlm(joinpath(@__DIR__, "data", "hourly_StL.tsv"))
-        by = By{Int,Float64}(first, last)
+        byUU = By(first, last)
+        byKU = By{Int}(first, last)
+        byUV = By{UNKNOWN,Float64}(first, last)
+        byKV = By{Int,Float64}(first, last)
 
-        mins = @inferred minimum(by, eachrow(temps))
-        @test isa(mins, Dict{Int,Float64}) && mins == Dict(0 => 273.15, 3 => 268.325, 6 => 264.892, 9 => 262.865, 12 => 260.351, 15 => 268.478, 18 => 273.705, 21 => 275.75)
-        maxs = @inferred maximum(by, eachrow(temps))
-        @test isa(maxs, Dict{Int,Float64}) && maxs == Dict(0 => 283.019, 3 => 277.989, 6 => 278.94, 9 => 279.512, 12 => 280.599, 15 => 287.615, 18 => 288.265, 21 => 289.044)
+        resultmin = Dict(0 => 273.15,  3 => 268.325, 6 => 264.892, 9 => 262.865, 12 => 260.351, 15 => 268.478, 18 => 273.705, 21 => 275.75)
+        resultmax = Dict(0 => 283.019, 3 => 277.989, 6 => 278.94, 9 => 279.512,  12 => 280.599, 15 => 287.615, 18 => 288.265, 21 => 289.044)
+
+        for (by, dtype) in ((byUU, Dict{Float64,Float64}), (byKU, Dict{Int,Float64}), (byUV, Dict{Float64,Float64}), (byKV, Dict{Int,Float64}))
+            mins = @inferred minimum(by, eachrow(temps))
+            @test isa(mins, dtype) && mins == resultmin
+            maxs = @inferred maximum(by, eachrow(temps))
+            @test isa(maxs, dtype) && maxs == resultmax
+        end
+        mins = @inferred minimum(byKV, UnknownEltype(eachrow(temps)))
+        @test isa(mins, Dict{Int,Float64}) && mins == resultmin
+        maxs = @inferred maximum(byKV, UnknownEltype(eachrow(temps)))
+        @test isa(maxs, Dict{Int,Float64}) && maxs == resultmax
+        mins = minimum(byUU, UnknownEltype(eachrow(temps)))
+        @test isa(mins, Dict{Float64,Float64}) && mins == resultmin
+        maxs = maximum(byUU, UnknownEltype(eachrow(temps)))
+        @test isa(maxs, Dict{Float64,Float64}) && maxs == resultmax
     end
 
     @testset "benchmark cases" begin
