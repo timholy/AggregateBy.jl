@@ -34,7 +34,7 @@ Dict{Char, Int64} with 4 entries:
   'e' => 1
   'o' => 1
 
-julia> push!(By(isodd), 1:11)
+julia> collect(By(isodd), 1:11)
 Dict{Bool, Vector{Int64}} with 2 entries:
   0 => [2, 4, 6, 8, 10]
   1 => [1, 3, 5, 7, 9, 11]
@@ -83,22 +83,22 @@ function sumjoin(by::By{K,V,FKey,FVal}, ::Type{T}) where {K,V,FKey,FVal,T}
     return Core.Compiler.return_type(Tuple{typeof(+),FT,FT})
 end
 
-# push!
+# collect
 
-Base.push!(by::By, itr) = _push!(by, itr, IteratorEltype(itr))
+Base.collect(by::By, itr) = _collect(by, itr, IteratorEltype(itr))
 
-_push!(by::By{UNKNOWN,UNKNOWN}, itr, ::HasEltype) = __push!(By{fkeyitemtype(by,eltype(itr)),Vector{fvalitemtype(by,eltype(itr))}}(by.fkey, by.fval), itr)
-_push!(by::By{K,UNKNOWN}, itr, ::HasEltype) where K = __push!(By{K,Vector{fvalitemtype(by,eltype(itr))}}(by.fkey, by.fval), itr)
-_push!(by::By{UNKNOWN,V}, itr, ::HasEltype) where V = __push!(By{fkeyitemtype(by,eltype(itr)),V}(by.fkey, by.fval), itr)
-_push!(by::By{K,V}, itr, ::HasEltype) where {K,V} = __push!(By{K,V}(by.fkey, by.fval), itr)
+_collect(by::By{UNKNOWN,UNKNOWN}, itr, ::HasEltype) = __collect(By{fkeyitemtype(by,eltype(itr)),Vector{fvalitemtype(by,eltype(itr))}}(by.fkey, by.fval), itr)
+_collect(by::By{K,UNKNOWN}, itr, ::HasEltype) where K = __collect(By{K,Vector{fvalitemtype(by,eltype(itr))}}(by.fkey, by.fval), itr)
+_collect(by::By{UNKNOWN,V}, itr, ::HasEltype) where V = __collect(By{fkeyitemtype(by,eltype(itr)),V}(by.fkey, by.fval), itr)
+_collect(by::By{K,V}, itr, ::HasEltype) where {K,V} = __collect(By{K,V}(by.fkey, by.fval), itr)
 
-_push!(by::By{UNKNOWN,UNKNOWN}, itr, ::EltypeUnknown) = tighten(__push!(By{Any,Any}(by.fkey, by.fval), itr), UNKNOWN, UNKNOWN; Vdeep=eltypebottom)
-_push!(by::By{K,UNKNOWN}, itr, ::EltypeUnknown) where K = tighten(__push!(By{K,Any}(by.fkey, by.fval), itr), K, UNKNOWN; Vdeep=eltypebottom)
-_push!(by::By{UNKNOWN,V}, itr, ::EltypeUnknown) where V = tighten(__push!(By{Any,V}(by.fkey, by.fval), itr), UNKNOWN, V)
-_push!(by::By{K,V}, itr, ::EltypeUnknown) where {K,V} = __push!(By{K,V}(by.fkey, by.fval), itr)
+_collect(by::By{UNKNOWN,UNKNOWN}, itr, ::EltypeUnknown) = tighten(__collect(By{Any,Any}(by.fkey, by.fval), itr), UNKNOWN, UNKNOWN; Vdeep=eltypebottom)
+_collect(by::By{K,UNKNOWN}, itr, ::EltypeUnknown) where K = tighten(__collect(By{K,Any}(by.fkey, by.fval), itr), K, UNKNOWN; Vdeep=eltypebottom)
+_collect(by::By{UNKNOWN,V}, itr, ::EltypeUnknown) where V = tighten(__collect(By{Any,V}(by.fkey, by.fval), itr), UNKNOWN, V)
+_collect(by::By{K,V}, itr, ::EltypeUnknown) where {K,V} = __collect(By{K,V}(by.fkey, by.fval), itr)
 
 
-__push!(by::By{K,V}, itr) where {K,V} = operate!(by, (d, k, v) -> push!(get!(Vector{V}, d, k), v), Dict{K,V}(), itr)
+__collect(by::By{K,V}, itr) where {K,V} = operate!(by, (d, k, v) -> push!(get!(Vector{V}, d, k), v), Dict{K,V}(), itr)
 
 
 # minimum

@@ -1,7 +1,7 @@
 # Internals and advanced usage
 
 `AggregateBy.jl`'s most important design goal is to be a lightweight tool that simplifies interactive analysis at the command line. However, it also tries to achieve reasonable performance,
-and that often means inferring the key- and value-types of the returned `Dict`. In detail, here is what actually happens for a ficticious `aggregator` (e.g., like `count`, `sum`, or `push!`) and "by" function `By(fkey, fval)`:
+and that often means inferring the key- and value-types of the returned `Dict`. In detail, here is what actually happens for a ficticious `aggregator` (e.g., like `count`, `sum`, or `collect`) and "by" function `By(fkey, fval)`:
 
 - If you call `aggregator(By{K,V}(fkey, fval), itr)`, it should return a `Dict{K,V}`. It does not rely on inference.
 - If you call `aggregator(By(fkey, fval), itr)`, it will determine whether `itr` has a known eltype (see `Base.IteratorEltype`):

@@ -9,7 +9,7 @@ Currently supported operations:
 
 - `count`
 - `sum`
-- `push!`
+- `collect`
 - `minimum`
 - `maximum`
 
