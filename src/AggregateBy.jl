@@ -6,21 +6,23 @@ using Base: IteratorEltype, EltypeUnknown, HasEltype
 
 struct UNKNOWN end
 
-struct By{K,V,F}
-    f::F
+struct By{K,V,FKey,FVal}
+    fkey::FKey
+    fval::FVal
 end
-By{K,V}(f::F) where {K,V,F} = By{K,V,F}(f)
-By{K,V}() where {K,V} = By{K,V}(identity)
+By{K,V}(fkey::FKey=identity, fval::FVal=identity) where {K,V,FKey,FVal} = By{K,V,FKey,FVal}(fkey, fval)
 @inline By{K}(args...) where K = By{K,UNKNOWN}(args...)
+# By(args...) is below with the docstring
 
 """
-    By(f=identity)
-    By{K,V}(f=identity)
+    By(fkey=identity, fval=identity)
+    By{K,V}(fkey=identity, fval=identity)
 
-`By` creates an object that triggers "key-selective" operations on a collection. `f` is the function that generates
-the key, and the operation determines the resulting value. The return value is typically a `Dict`.
-Optionally, you can specify the key `K` and value `V` types of that `Dict`, which can help performance in certain cases
-(see the documentation for details).
+`By` creates an object that triggers "key-selective" operations on a collection. `fkey(item)` generates
+the key (i.e., the aggregation target), and `fval(item)` gets used in the aggregation operation.
+
+The return value is typically a `Dict`. Optionally, you can specify the key `K` and value `V` types
+of that `Dict`, which can help performance in certain cases (see the documentation for details).
 
 # Examples
 
@@ -40,26 +42,22 @@ Dict{Bool, Vector{Int64}} with 2 entries:
 """
 @inline By(args...) = By{UNKNOWN}(args...)
 
-(by::By)(x) = by.f(x)
-
-Base.keytype(::Type{By{K,V,F}}) where {K,V,F} = K
-Base.keytype(::Type{By{K,V}}) where {K,V} = K
-Base.keytype(::Type{By{K}}) where {K} = K
-Base.valtype(::Type{By{K,V,F}}) where {K,V,F} = V
-Base.valtype(::Type{By{K,V}}) where {K,V} = V
+Base.keytype(::Type{<:By{K}})   where {K}   = K
+Base.valtype(::Type{<:By{K,V}}) where {K,V} = V
 Base.keytype(by::By) = keytype(typeof(by))
 Base.valtype(by::By) = valtype(typeof(by))
 
 ## count
+# count ignores `fval`
 
 Base.count(by::By, itr) = _count(by, itr, IteratorEltype(typeof(itr)))
 # Ambiguities
 Base.count(by::By, A::Union{AbstractArray, Base.AbstractBroadcasted}) = invoke(count, Tuple{By, Any}, by, A)
 
 # count defaults to Int
-_count(by::By{UNKNOWN,V}, itr, ::HasEltype) where V = __count(By{keyjoin(by, eltype(itr)),V===UNKNOWN ? Int : V}(by.f), itr)
-_count(by::By{UNKNOWN,V}, itr, ::EltypeUnknown) where V = tighten(__count(By{Any,V===UNKNOWN ? Int : V}(by.f), itr), UNKNOWN, V===UNKNOWN ? Int : V)
-_count(by::By{K,V}, itr, ::Any) where {K,V} = __count(By{K,V===UNKNOWN ? Int : V}(by.f), itr)
+_count(by::By{UNKNOWN,V}, itr, ::HasEltype) where V = __count(By{fkeyitemtype(by, eltype(itr)),V===UNKNOWN ? Int : V}(by.fkey, by.fval), itr)
+_count(by::By{UNKNOWN,V}, itr, ::EltypeUnknown) where V = tighten(__count(By{Any,V===UNKNOWN ? Int : V}(by.fkey, by.fval), itr), UNKNOWN, V===UNKNOWN ? Int : V)
+_count(by::By{K,V}, itr, ::Any) where {K,V} = __count(By{K,V===UNKNOWN ? Int : V}(by.fkey, by.fval), itr)
 
 __count(by::By{K,V}, itr) where {K,V} = operate!(by, (d, k, v) -> d[k] = get(d, k, zero(V)) + oneunit(V), Dict{K, V}(), itr)
 
@@ -71,44 +69,84 @@ Base.sum(by::By, itr) = _sum(by, itr, IteratorEltype(itr))
 Base.sum(by::By, A::AbstractArray) = invoke(sum, Tuple{By, Any}, by, A)
 # TODO? `dims` version for AbstractArray?
 
-_sum(by::By{UNKNOWN,UNKNOWN}, itr, ::HasEltype) = __sum(By{keyjoin(by,eltype(itr)),sumjoin(eltype(itr))}(by.f), itr)
-_sum(by::By{K,UNKNOWN}, itr, ::HasEltype) where K = __sum(By{K,sumjoin(eltype(itr))}(by.f), itr)
-_sum(by::By{UNKNOWN,V}, itr, ::HasEltype) where V = __sum(By{keyjoin(by,eltype(itr)),V}(by.f), itr)
-_sum(by::By{K,V}, itr, ::HasEltype) where {K,V} = __sum(By{K,V}(by.f), itr)
+_sum(by::By{UNKNOWN,UNKNOWN}, itr, ::HasEltype) = __sum(By{fkeyitemtype(by,eltype(itr)),sumjoin(by,eltype(itr))}(by.fkey, by.fval), itr)
+_sum(by::By{K,UNKNOWN}, itr, ::HasEltype) where K = __sum(By{K,sumjoin(by,eltype(itr))}(by.fkey, by.fval), itr)
+_sum(by::By{UNKNOWN,V}, itr, ::HasEltype) where V = __sum(By{fkeyitemtype(by,eltype(itr)),V}(by.fkey, by.fval), itr)
+_sum(by::By{K,V}, itr, ::HasEltype) where {K,V} = __sum(By{K,V}(by.fkey, by.fval), itr)
 
-_sum(by::By{K,V}, itr, ::EltypeUnknown) where {K,V} = tighten(__sum(By{K===UNKNOWN ? Any : K,V===UNKNOWN ? Any : V}(by.f), itr), K, V)
+_sum(by::By{K,V}, itr, ::EltypeUnknown) where {K,V} = tighten(__sum(By{K===UNKNOWN ? Any : K,V===UNKNOWN ? Any : V}(by.fkey, by.fval), itr), K, V)
 
 __sum(by::By{K,V}, itr) where {K,V} = operate!(by, (d, k, v) -> d[k] = get(d, k, V === Any ? false : zero(V)) + v, Dict{K, V}(), itr)
 
-sumjoin(::Type{T}) where T = Core.Compiler.return_type(Tuple{typeof(+),T,T})
+function sumjoin(by::By{K,V,FKey,FVal}, ::Type{T}) where {K,V,FKey,FVal,T}
+    FT = fvalitemtype(by, T)
+    return Core.Compiler.return_type(Tuple{typeof(+),FT,FT})
+end
 
 # push!
 
 Base.push!(by::By, itr) = _push!(by, itr, IteratorEltype(itr))
 
-_push!(by::By{UNKNOWN,UNKNOWN}, itr, ::HasEltype) = __push!(By{keyjoin(by,eltype(itr)),Vector{eltype(itr)}}(by.f), itr)
-_push!(by::By{K,UNKNOWN}, itr, ::HasEltype) where K = __push!(By{K,Vector{eltype(itr)}}(by.f), itr)
-_push!(by::By{UNKNOWN,V}, itr, ::HasEltype) where V = __push!(By{keyjoin(by,eltype(itr)),V}(by.f), itr)
-_push!(by::By{K,V}, itr, ::HasEltype) where {K,V} = __push!(By{K,V}(by.f), itr)
+_push!(by::By{UNKNOWN,UNKNOWN}, itr, ::HasEltype) = __push!(By{fkeyitemtype(by,eltype(itr)),Vector{fvalitemtype(by,eltype(itr))}}(by.fkey, by.fval), itr)
+_push!(by::By{K,UNKNOWN}, itr, ::HasEltype) where K = __push!(By{K,Vector{fvalitemtype(by,eltype(itr))}}(by.fkey, by.fval), itr)
+_push!(by::By{UNKNOWN,V}, itr, ::HasEltype) where V = __push!(By{fkeyitemtype(by,eltype(itr)),V}(by.fkey, by.fval), itr)
+_push!(by::By{K,V}, itr, ::HasEltype) where {K,V} = __push!(By{K,V}(by.fkey, by.fval), itr)
 
-_push!(by::By{UNKNOWN,UNKNOWN}, itr, ::EltypeUnknown) = tighten(__push!(By{Any,Any}(by.f), itr), UNKNOWN, UNKNOWN; Vdeep=eltypebottom)
-_push!(by::By{K,UNKNOWN}, itr, ::EltypeUnknown) where K = tighten(__push!(By{K,Any}(by.f), itr), K, UNKNOWN; Vdeep=eltypebottom)
-_push!(by::By{UNKNOWN,V}, itr, ::EltypeUnknown) where V = tighten(__push!(By{Any,V}(by.f), itr), UNKNOWN, V)
-_push!(by::By{K,V}, itr, ::EltypeUnknown) where {K,V} = __push!(By{K,V}(by.f), itr)
+_push!(by::By{UNKNOWN,UNKNOWN}, itr, ::EltypeUnknown) = tighten(__push!(By{Any,Any}(by.fkey, by.fval), itr), UNKNOWN, UNKNOWN; Vdeep=eltypebottom)
+_push!(by::By{K,UNKNOWN}, itr, ::EltypeUnknown) where K = tighten(__push!(By{K,Any}(by.fkey, by.fval), itr), K, UNKNOWN; Vdeep=eltypebottom)
+_push!(by::By{UNKNOWN,V}, itr, ::EltypeUnknown) where V = tighten(__push!(By{Any,V}(by.fkey, by.fval), itr), UNKNOWN, V)
+_push!(by::By{K,V}, itr, ::EltypeUnknown) where {K,V} = __push!(By{K,V}(by.fkey, by.fval), itr)
 
 
 __push!(by::By{K,V}, itr) where {K,V} = operate!(by, (d, k, v) -> push!(get!(Vector{V}, d, k), v), Dict{K,V}(), itr)
 
 
+# minimum
+
+Base.minimum(by::By, itr) = _minimum(by, itr, IteratorEltype(itr))
+# Ambiguities
+Base.minimum(by::By, A::AbstractArray) = invoke(minimum, Tuple{By, Any}, by, A)
+
+_minimum(by::By{UNKNOWN,UNKNOWN}, itr, ::HasEltype) = __minimum(By{fkeyitemtype(by,eltype(itr)),fvalitemtype(by,eltype(itr))}(by.fkey, by.fval), itr)
+_minimum(by::By{K,UNKNOWN}, itr, ::HasEltype) where K = __minimum(By{K,fvalitemtype(by,eltype(itr))}(by.fkey, by.fval), itr)
+_minimum(by::By{UNKNOWN,V}, itr, ::HasEltype) where V = __minimum(By{fkeyitemtype(by,eltype(itr)),V}(by.fkey, by.fval), itr)
+_minimum(by::By{K,V}, itr, ::HasEltype) where {K,V} = __minimum(By{K,V}(by.fkey, by.fval), itr)
+
+_minimum(by::By{K,V}, itr, ::EltypeUnknown) where {K,V} = tighten(__minimum(By{K===UNKNOWN ? Any : K,V===UNKNOWN ? Any : V}(by.fkey, by.fval), itr), K, V)
+
+__minimum(by::By{K,V}, itr) where {K,V} = operate!(by, (d, k, v) -> d[k] = safemin(v, get(d, k, UNKNOWN())), Dict{K, V}(), itr)
+
+safemin(x, y) = min(x, y)
+safemin(x, ::UNKNOWN) = x
+
+# maximum
+
+Base.maximum(by::By, itr) = _maximum(by, itr, IteratorEltype(itr))
+# Ambiguities
+Base.maximum(by::By, A::AbstractArray) = invoke(maximum, Tuple{By, Any}, by, A)
+
+_maximum(by::By{UNKNOWN,UNKNOWN}, itr, ::HasEltype) = __maximum(By{fkeyitemtype(by,eltype(itr)),fvalitemtype(by,eltype(itr))}(by.fkey, by.fval), itr)
+_maximum(by::By{K,UNKNOWN}, itr, ::HasEltype) where K = __maximum(By{K,fvalitemtype(by,eltype(itr))}(by.fkey, by.fval), itr)
+_maximum(by::By{UNKNOWN,V}, itr, ::HasEltype) where V = __maximum(By{fkeyitemtype(by,eltype(itr)),V}(by.fkey, by.fval), itr)
+_maximum(by::By{K,V}, itr, ::HasEltype) where {K,V} = __maximum(By{K,V}(by.fkey, by.fval), itr)
+
+_maximum(by::By{K,V}, itr, ::EltypeUnknown) where {K,V} = tighten(__maximum(By{K===UNKNOWN ? Any : K,V===UNKNOWN ? Any : V}(by.fkey, by.fval), itr), K, V)
+
+__maximum(by::By{K,V}, itr) where {K,V} = operate!(by, (d, k, v) -> d[k] = safemax(v, get(d, k, UNKNOWN())), Dict{K, V}(), itr)
+
+safemax(x, y) = max(x, y)
+safemax(x, ::UNKNOWN) = x
+
 
 ## Generic operations
 
-keyjoin(::By{K,V,F}, ::Type{T}) where {K,V,F,T} = Core.Compiler.return_type(Tuple{F,T})
+fkeyitemtype(::By{K,V,FKey}, ::Type{T}) where {K,V,FKey,T} = Core.Compiler.return_type(Tuple{FKey,T})
+fvalitemtype(::By{K,V,FKey,FVal}, ::Type{T}) where {K,V,FKey,FVal,T} = Core.Compiler.return_type(Tuple{FVal,T})
 
-function operate!(by::By{K}, op, dest, itr) where K
+function operate!(by::By, op, dest, itr)
     for item in itr
-        byitem = by(item)
-        op(dest, byitem, item)
+        key = by.fkey(item)
+        op(dest, key, by.fval(item))
     end
     return dest
 end

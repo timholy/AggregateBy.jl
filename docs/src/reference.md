@@ -10,6 +10,8 @@ Currently supported operations:
 - `count`
 - `sum`
 - `push!`
+- `minimum`
+- `maximum`
 
 ```@autodocs
 Modules = [AggregateBy]
