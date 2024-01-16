@@ -4,6 +4,8 @@
 [![Coverage](https://codecov.io/gh/timholy/AggregateBy.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/timholy/AggregateBy.jl)
 [![Documentation](https://img.shields.io/badge/docs-dev-blue.svg)](https://timholy.github.io/AggregateBy.jl/dev)
 
+**NOTE**: AggregateBy is not registered. For a registered package with similar functionality, see https://github.com/JuliaData/SplitApplyCombine.jl.
+
 AggregateBy supports simple aggregation operations on iterable containers. Functions that might (in other languages) be called `countby` and `groupby` are instead composed of two pieces, (1) an aggregation command and (2) a `By(fkey, fval)` elementwise operator that generates key, value pairs for aggregation. Some examples may help explain the general concept.
 
 ## Examples
