@@ -94,13 +94,13 @@ Base.iterate(u::UnknownEltype, s) = iterate(u.container, s)
         @test isa(l, Dict{Bool, Vector{Int}}) && l == result
     end
 
-    @testset "min/max" begin
+    @testset "minimum/maximum" begin
         temps = readdlm(joinpath(@__DIR__, "data", "hourly_StL.tsv"))
         by = By{Int,Float64}(first, last)
 
-        mins = @inferred min(by, eachrow(temps))
+        mins = @inferred minimum(by, eachrow(temps))
         @test isa(mins, Dict{Int,Float64}) && mins == Dict(0 => 273.15, 3 => 268.325, 6 => 264.892, 9 => 262.865, 12 => 260.351, 15 => 268.478, 18 => 273.705, 21 => 275.75)
-        maxs = @inferred max(by, eachrow(temps))
+        maxs = @inferred maximum(by, eachrow(temps))
         @test isa(maxs, Dict{Int,Float64}) && maxs == Dict(0 => 283.019, 3 => 277.989, 6 => 278.94, 9 => 279.512, 12 => 280.599, 15 => 287.615, 18 => 288.265, 21 => 289.044)
     end
 

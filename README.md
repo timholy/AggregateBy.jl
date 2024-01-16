@@ -33,7 +33,7 @@ Dict{Bool, Vector{Int64}} with 2 entries:
 If you have a matrix `temperaturedata` where the first column holds a `DateTime` (from the `Dates` library) and the second column holds the temperature, then the hourly maximum temperature can be computed as
 
 ```julia
-julia> max(By(hour ∘ first, last), eachrow(temperaturedata))
+julia> maximum(By(hour ∘ first, last), eachrow(temperaturedata))
 Dict{Int64, Float64} with 8 entries:
   0  => 283.019
   15 => 287.615

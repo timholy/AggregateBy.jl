@@ -101,38 +101,38 @@ _push!(by::By{K,V}, itr, ::EltypeUnknown) where {K,V} = __push!(By{K,V}(by.fkey,
 __push!(by::By{K,V}, itr) where {K,V} = operate!(by, (d, k, v) -> push!(get!(Vector{V}, d, k), v), Dict{K,V}(), itr)
 
 
-# min
+# minimum
 
-Base.min(by::By, itr) = _min(by, itr, IteratorEltype(itr))
+Base.minimum(by::By, itr) = _minimum(by, itr, IteratorEltype(itr))
 # Ambiguities
-Base.min(::By, m::Missing) = m
+Base.minimum(by::By, A::AbstractArray) = invoke(minimum, Tuple{By, Any}, by, A)
 
-_min(by::By{UNKNOWN,UNKNOWN}, itr, ::HasEltype) = __min(By{fkeyitemtype(by,eltype(itr)),fvalitemtype(by,eltype(itr))}(by.fkey, by.fval), itr)
-_min(by::By{K,UNKNOWN}, itr, ::HasEltype) where K = __min(By{K,fvalitemtype(by,eltype(itr))}(by.fkey, by.fval), itr)
-_min(by::By{UNKNOWN,V}, itr, ::HasEltype) where V = __min(By{fkeyitemtype(by,eltype(itr)),V}(by.fkey, by.fval), itr)
-_min(by::By{K,V}, itr, ::HasEltype) where {K,V} = __min(By{K,V}(by.fkey, by.fval), itr)
+_minimum(by::By{UNKNOWN,UNKNOWN}, itr, ::HasEltype) = __minimum(By{fkeyitemtype(by,eltype(itr)),fvalitemtype(by,eltype(itr))}(by.fkey, by.fval), itr)
+_minimum(by::By{K,UNKNOWN}, itr, ::HasEltype) where K = __minimum(By{K,fvalitemtype(by,eltype(itr))}(by.fkey, by.fval), itr)
+_minimum(by::By{UNKNOWN,V}, itr, ::HasEltype) where V = __minimum(By{fkeyitemtype(by,eltype(itr)),V}(by.fkey, by.fval), itr)
+_minimum(by::By{K,V}, itr, ::HasEltype) where {K,V} = __minimum(By{K,V}(by.fkey, by.fval), itr)
 
-_min(by::By{K,V}, itr, ::EltypeUnknown) where {K,V} = tighten(__min(By{K===UNKNOWN ? Any : K,V===UNKNOWN ? Any : V}(by.fkey, by.fval), itr), K, V)
+_minimum(by::By{K,V}, itr, ::EltypeUnknown) where {K,V} = tighten(__minimum(By{K===UNKNOWN ? Any : K,V===UNKNOWN ? Any : V}(by.fkey, by.fval), itr), K, V)
 
-__min(by::By{K,V}, itr) where {K,V} = operate!(by, (d, k, v) -> d[k] = safemin(v, get(d, k, UNKNOWN())), Dict{K, V}(), itr)
+__minimum(by::By{K,V}, itr) where {K,V} = operate!(by, (d, k, v) -> d[k] = safemin(v, get(d, k, UNKNOWN())), Dict{K, V}(), itr)
 
 safemin(x, y) = min(x, y)
 safemin(x, ::UNKNOWN) = x
 
-# max
+# maximum
 
-Base.max(by::By, itr) = _max(by, itr, IteratorEltype(itr))
+Base.maximum(by::By, itr) = _maximum(by, itr, IteratorEltype(itr))
 # Ambiguities
-Base.max(::By, m::Missing) = m
+Base.maximum(by::By, A::AbstractArray) = invoke(maximum, Tuple{By, Any}, by, A)
 
-_max(by::By{UNKNOWN,UNKNOWN}, itr, ::HasEltype) = __max(By{fkeyitemtype(by,eltype(itr)),fvalitemtype(by,eltype(itr))}(by.fkey, by.fval), itr)
-_max(by::By{K,UNKNOWN}, itr, ::HasEltype) where K = __max(By{K,fvalitemtype(by,eltype(itr))}(by.fkey, by.fval), itr)
-_max(by::By{UNKNOWN,V}, itr, ::HasEltype) where V = __max(By{fkeyitemtype(by,eltype(itr)),V}(by.fkey, by.fval), itr)
-_max(by::By{K,V}, itr, ::HasEltype) where {K,V} = __max(By{K,V}(by.fkey, by.fval), itr)
+_maximum(by::By{UNKNOWN,UNKNOWN}, itr, ::HasEltype) = __maximum(By{fkeyitemtype(by,eltype(itr)),fvalitemtype(by,eltype(itr))}(by.fkey, by.fval), itr)
+_maximum(by::By{K,UNKNOWN}, itr, ::HasEltype) where K = __maximum(By{K,fvalitemtype(by,eltype(itr))}(by.fkey, by.fval), itr)
+_maximum(by::By{UNKNOWN,V}, itr, ::HasEltype) where V = __maximum(By{fkeyitemtype(by,eltype(itr)),V}(by.fkey, by.fval), itr)
+_maximum(by::By{K,V}, itr, ::HasEltype) where {K,V} = __maximum(By{K,V}(by.fkey, by.fval), itr)
 
-_max(by::By{K,V}, itr, ::EltypeUnknown) where {K,V} = tighten(__max(By{K===UNKNOWN ? Any : K,V===UNKNOWN ? Any : V}(by.fkey, by.fval), itr), K, V)
+_maximum(by::By{K,V}, itr, ::EltypeUnknown) where {K,V} = tighten(__maximum(By{K===UNKNOWN ? Any : K,V===UNKNOWN ? Any : V}(by.fkey, by.fval), itr), K, V)
 
-__max(by::By{K,V}, itr) where {K,V} = operate!(by, (d, k, v) -> d[k] = safemax(v, get(d, k, UNKNOWN())), Dict{K, V}(), itr)
+__maximum(by::By{K,V}, itr) where {K,V} = operate!(by, (d, k, v) -> d[k] = safemax(v, get(d, k, UNKNOWN())), Dict{K, V}(), itr)
 
 safemax(x, y) = max(x, y)
 safemax(x, ::UNKNOWN) = x
